@@ -19,14 +19,14 @@ from pathlib import Path
 # Models
 # ---------------------------------------------------------------------------
 MODEL_AUTOSTART = {
-    "gz_atmos":              70000,
-    "gz_atmos_dual":         70001,
+    "gz_atmos": 70000,
+    "gz_atmos_dual": 70001,
     "gz_uuv_bluerov2_heavy": 60002,
 }
 
 MODEL_BUILD = {
-    "gz_atmos":              "px4_sitl_spacecraft",
-    "gz_atmos_dual":         "px4_sitl_spacecraft",
+    "gz_atmos": "px4_sitl_spacecraft",
+    "gz_atmos_dual": "px4_sitl_spacecraft",
     "gz_uuv_bluerov2_heavy": "px4_sitl_uuv",
 }
 
@@ -50,27 +50,30 @@ PROPAGATED_KEYS = [
 # Public API
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class Vehicle:
     """Vehicle to launch in a scenario."""
+
     name: str
     model: str
     pose: tuple = (0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
 
 
-def launch(vehicles,
-           world: str = "default",
-           px4_dir: str | None = None,
-           session: str = "px4sitl",
-           startup_delay: float = 6.0):
+def launch(
+    vehicles,
+    world: str = "default",
+    px4_dir: str | None = None,
+    session: str = "px4sitl",
+    startup_delay: float = 6.0,
+):
     """Launch the given list of Vehicles."""
     p = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
         description="Launch the PX4 SITL scenario defined in this file.",
     )
     p.add_argument("--startup-delay", type=float, default=startup_delay)
-    p.add_argument("--kill", action="store_true",
-                   help="kill the tmux session and exit")
+    p.add_argument("--kill", action="store_true", help="kill the tmux session and exit")
     args = p.parse_args()
 
     if args.kill:
@@ -93,25 +96,30 @@ def launch(vehicles,
     if not px4_dir:
         sys.exit("PX4 dir not set: export $PX4_Autopilot_Dir or pass px4_dir=")
     px4_dir = Path(px4_dir).expanduser().resolve()
-    
+
     # Validate models and check each required build is present.
     for v in vehicles:
         if v.model not in MODEL_BUILD:
-            sys.exit(f"No build target known for model {v.model!r}. "
-                     f"Add it to MODEL_BUILD in px4_sitl_launcher.py.")
+            sys.exit(
+                f"No build target known for model {v.model!r}. "
+                f"Add it to MODEL_BUILD in px4_sitl_launcher.py."
+            )
     needed_builds = {MODEL_BUILD[v.model] for v in vehicles}
     for build in needed_builds:
         px4_bin = px4_dir / "build" / build / "bin" / "px4"
         if not px4_bin.is_file():
-            sys.exit(f"PX4 binary not found at {px4_bin}.\n"
-                     f"-> run `make {build}` in {px4_dir} first.")
+            sys.exit(
+                f"PX4 binary not found at {px4_bin}.\n"
+                f"-> run `make {build}` in {px4_dir} first."
+            )
 
     # Build per-vehicle commands
     commands = []
     for i, v in enumerate(vehicles):
         env = _build_env(v, world=world, standalone=(i > 0))
-        commands.append((v.name, i,
-                         _build_command(px4_dir, MODEL_BUILD[v.model], i, env)))
+        commands.append(
+            (v.name, i, _build_command(px4_dir, MODEL_BUILD[v.model], i, env))
+        )
 
     # Summary
     print(f"PX4 dir : {px4_dir}")
@@ -133,8 +141,8 @@ def _build_env(vehicle: Vehicle, world: str, standalone: bool) -> dict:
         )
     env = {
         "PX4_SYS_AUTOSTART": str(MODEL_AUTOSTART[vehicle.model]),
-        "PX4_SIM_MODEL":     vehicle.model,
-        "PX4_UXRCE_DDS_NS":  vehicle.name,
+        "PX4_SIM_MODEL": vehicle.model,
+        "PX4_UXRCE_DDS_NS": vehicle.name,
         "PX4_GZ_MODEL_POSE": ",".join(f"{v:g}" for v in vehicle.pose),
     }
     if world and world.lower() != "default":
@@ -157,21 +165,41 @@ def _build_command(px4_dir: Path, build: str, instance: int, env: dict) -> str:
 
 def _launch_tmux(commands, session, delay):
     forward_keys = [
-        "DISPLAY", "WAYLAND_DISPLAY", "XDG_RUNTIME_DIR",
-        "LD_LIBRARY_PATH", "GZ_SIM_RESOURCE_PATH",
+        "DISPLAY",
+        "WAYLAND_DISPLAY",
+        "XDG_RUNTIME_DIR",
+        "LD_LIBRARY_PATH",
+        "GZ_SIM_RESOURCE_PATH",
         "GZ_SIM_SYSTEM_PLUGIN_PATH",
-        "GZ_VERSION", "HOME", "PATH",
-        "GZ_IP", "GZ_RELAY",
+        "GZ_VERSION",
+        "HOME",
+        "PATH",
+        "GZ_IP",
+        "GZ_RELAY",
     ]
 
     env_exports = "; ".join(
         f"export {k}={shlex.quote(os.environ[k])}"
-        for k in forward_keys if k in os.environ
+        for k in forward_keys
+        if k in os.environ
     )
 
     name, instance, cmd = commands[0]
-    subprocess.run(["tmux", "new-session", "-d", "-s", session,
-                    "-n", name, "bash", "-c", f"{env_exports}; {cmd}"], check=True)
+    subprocess.run(
+        [
+            "tmux",
+            "new-session",
+            "-d",
+            "-s",
+            session,
+            "-n",
+            name,
+            "bash",
+            "-c",
+            f"{env_exports}; {cmd}",
+        ],
+        check=True,
+    )
 
     # Server now exists — sync env into it
     for key in forward_keys:
@@ -183,16 +211,30 @@ def _launch_tmux(commands, session, delay):
         _wait_for_gz_server(delay)
 
     for name, instance, cmd in commands[1:]:
-        subprocess.run(["tmux", "new-window", "-t", session, "-n", name,
-                        "bash", "-c", f"{env_exports}; {cmd}"], check=True)
+        subprocess.run(
+            [
+                "tmux",
+                "new-window",
+                "-t",
+                session,
+                "-n",
+                name,
+                "bash",
+                "-c",
+                f"{env_exports}; {cmd}",
+            ],
+            check=True,
+        )
         print(f"  [{name}] PX4 instance {instance}  (standalone, attaching)")
 
     print()
     print(f"tmux session '{session}' is up.")
     print(f"  attach :  tmux attach -t {session}")
     print(f"  windows:  Ctrl-b 1/2/3   or   Ctrl-b n / Ctrl-b p")
-    print(f"  kill   :  tmux kill-session -t {session}    "
-          f"(or rerun the script with --kill)")
+    print(
+        f"  kill   :  tmux kill-session -t {session}    "
+        f"(or rerun the script with --kill)"
+    )
 
 
 def _wait_for_gz_server(timeout: float):
@@ -214,7 +256,9 @@ def _gz_server_is_running() -> bool:
         ["pgrep", "-f", r"gz server"],
     )
     for probe in probes:
-        result = subprocess.run(probe, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        result = subprocess.run(
+            probe, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+        )
         if result.returncode == 0:
             return True
     return False
