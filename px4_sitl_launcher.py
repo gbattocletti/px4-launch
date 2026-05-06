@@ -215,6 +215,7 @@ def _launch_tmux(commands, session, delay):
             [
                 "tmux",
                 "new-window",
+                "-a",
                 "-t",
                 session,
                 "-n",
