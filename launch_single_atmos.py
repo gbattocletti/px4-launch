@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Scenario: single atmos free-flyer in the default world."""
+"""Scenario: single atmos free-flyer."""
 
 from px4_sitl_launcher import launch, Vehicle
 
