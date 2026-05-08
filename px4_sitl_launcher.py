@@ -16,13 +16,11 @@ import shlex
 from dataclasses import dataclass
 from pathlib import Path
 
-# Settings defaults --------------------------------------------------------------------
+# Settings -----------------------------------------------------------------------------
 # Multiplexer backend used to host the per-vehicle windows.
 #   "tmux"       -> plain tmux
 #   "byobu-tmux" -> tmux wrapped by byobu (gives byobu's status bar / keys)
 BACKEND = "byobu-tmux"
-
-# Run Gazebo without the GUI.
 HEADLESS = False
 
 # Vehicle models -----------------------------------------------------------------------
@@ -103,26 +101,30 @@ def launch(
         description="Launch the PX4 SITL scenario defined in this file.",
     )
     p.add_argument(
-        "--startup-delay",
-        type=float,
-        default=startup_delay,
-    )
-    p.add_argument(
-        "--kill",
-        action="store_true",
-        help="kill the tmux session and all sim processes, then exit",
-    )
-    p.add_argument(
         "--backend",
+        type=str,
+        # metavar="",
         choices=["tmux", "byobu-tmux"],
         default=BACKEND,
         help="multiplexer backend to host the per-vehicle windows",
     )
     p.add_argument(
         "--headless",
-        action=argparse.BooleanOptionalAction,
+        action="store_true",
         default=HEADLESS,
         help="run Gazebo without the GUI",
+    )
+    p.add_argument(
+        "--startup-delay",
+        type=float,
+        metavar="",
+        default=startup_delay,
+        help="delay before launching standalone instances",
+    )
+    p.add_argument(
+        "--kill",
+        action="store_true",
+        help="kill the tmux session and all sim processes, then exit",
     )
     args = p.parse_args()
 
