@@ -20,7 +20,7 @@ from pathlib import Path
 # Multiplexer backend used to host the per-vehicle windows.
 #   "tmux"       -> plain tmux
 #   "byobu-tmux" -> tmux wrapped by byobu (gives byobu's status bar / keys)
-BACKEND = "byobu-tmux"
+MULTIPLEXER = "byobu-tmux"
 HEADLESS = False
 
 # Vehicle models -----------------------------------------------------------------------
@@ -76,6 +76,8 @@ def launch(
     px4_dir: str | None = None,
     session: str = "px4sitl",
     startup_delay: float = 6.0,
+    multiplexer: str = MULTIPLEXER,
+    headless: bool = HEADLESS,
 ) -> None:
     """
     Launch the given list of Vehicles.
@@ -91,6 +93,9 @@ def launch(
             instance before launching the rest. This is to give gz-server time to start
             up and be detected by the script before launching more instances that will
             try to connect to it.
+        multiplexer (str, optional): terminal multiplexer backend to use. Must be
+            either "tmux" or "byobu-tmux". Default is "byobu-tmux".
+        headless (bool, optional): whether to run Gazebo without the GUI.
 
     Returns:
         None
@@ -105,13 +110,13 @@ def launch(
         type=str,
         # metavar="",
         choices=["tmux", "byobu-tmux"],
-        default=BACKEND,
+        default=multiplexer,
         help="multiplexer backend to host the per-vehicle windows",
     )
     p.add_argument(
         "--headless",
         action="store_true",
-        default=HEADLESS,
+        default=headless,
         help="run Gazebo without the GUI",
     )
     p.add_argument(
