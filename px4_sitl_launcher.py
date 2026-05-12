@@ -282,7 +282,10 @@ def _launch_session(
     # Server now exists — sync env into it
     for key in forward_keys:
         if key in os.environ:
-            subprocess.run([backend, "set-environment", "-g", key, os.environ[key]])
+            subprocess.run(
+                [backend, "set-environment", "-g", key, os.environ[key]],
+                check=False,
+            )
     print(f"  [{name}] PX4 instance {instance}  (gz-server host)")
 
     # Wait a bit for gz-server to start up and be detectable before launching more
@@ -315,10 +318,10 @@ def _launch_session(
     print(f"session '{session}' is up.")
     print(f"  attach :  {attach_cmd} attach -t {session}")
     if backend == "byobu-tmux":
-        print(f"  windows:  F3 / F4   (or   Ctrl-b n / Ctrl-b p)")
+        print("  windows:  F3 / F4   (or   Ctrl-b n / Ctrl-b p)")
     else:
-        print(f"  windows:  Ctrl-b 1/2/3   or   Ctrl-b n / Ctrl-b p")
-    print(f"  kill   :  rerun this script with --kill")
+        print("  windows:  Ctrl-b 1/2/3   or   Ctrl-b n / Ctrl-b p")
+    print("  kill   :  rerun this script with --kill")
 
 
 def _wait_for_gz_server(timeout: float):
@@ -341,7 +344,10 @@ def _gz_server_is_running() -> bool:
     )
     for probe in probes:
         result = subprocess.run(
-            probe, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+            probe,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            check=False,
         )
         if result.returncode == 0:
             return True
@@ -359,6 +365,7 @@ def _kill_everything(session: str):
                 [backend, "kill-session", "-t", session],
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
+                check=False,
             )
     print(f"killed session '{session}' (if it existed)")
 
@@ -371,6 +378,7 @@ def _kill_everything(session: str):
             ["pkill", "-f", pat],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
+            check=False,
         )
     time.sleep(1.0)
     for pat in patterns:
@@ -378,5 +386,6 @@ def _kill_everything(session: str):
             ["pkill", "-9", "-f", pat],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
+            check=False,
         )
     print(f"killed any leftover sim processes ({', '.join(patterns)})")
